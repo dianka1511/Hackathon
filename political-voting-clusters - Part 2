@@ -1,0 +1,100 @@
+THIS IS THE 2ND PART: CLEANING.
+
+This involves removing unneeded columns, changing votes to numbers, and removing the votes on bills that are not legally impactful.
+
+attendance = attendance[['rollcall_id', 'bill_id']].dropna()
+​
+import re
+p = re.compile("[HS].((R.)|(j.res.))?[0-9]*.$",re.IGNORECASE)
+attendance = attendance[attendance["bill_id"].apply(lambda x: pd.notnull(p.match(x)))]
+print(attendance.head())
+
+Result:
+   rollcall_id    bill_id
+7     2019:008  H.J.RES.1
+8     2019:009  H.J.RES.1
+9     2019:010     H.R.21
+10    2019:011     H.R.21
+12    2019:013    H.R.269
+
+print(votes.head())
+
+votes = votes[attendance["rollcall_id"]] # filter out the votes on non-law things
+
+# What are all the unique terms for voting? We need to convert strings to booleans
+ls = []
+for col in votes.columns:
+    ls += list(pd.unique(votes[col]))
+ls = pd.unique(ls)
+print(ls)
+
+
+# turn strings to booleans
+def simplify_strings(x):
+    votes_to_bool = {1: ["Aye", "Yea"], -1: ["No", "Nay"], 0:[np.nan, "Not Voting", "Present"]}
+    for key, ls in votes_to_bool.items():
+        if x in ls:
+            return key
+
+for col in votes.columns:
+    votes[col] = votes[col].apply(simplify_strings)
+
+Result:
+
+           2019:641    2019:639    2019:640 2019:635 2019:636    2019:642  \
+name_id                                                                     
+A000374          No         Aye          No      Yea      Yea          No   
+A000370         Aye         Aye         Aye      Yea      Yea         Aye   
+A000055          No         Aye          No      Yea      Yea          No   
+A000371  Not Voting  Not Voting  Not Voting      Yea      Yea  Not Voting   
+A000372          No         Aye          No      Yea      Yea          No   
+
+        2019:634    2019:637    2019:638 2019:601  ... 2019:627 2019:625  \
+name_id                                            ...                     
+A000374      Nay         Aye         Aye      Aye  ...      Yea      Nay   
+A000370      Yea          No         Aye       No  ...      Yea      Yea   
+A000055      Nay         Aye         Aye      Aye  ...      Yea      Yea   
+A000371      Yea  Not Voting  Not Voting       No  ...      Yea      Yea   
+A000372      Nay         Aye         Aye      Aye  ...      Nay      Nay   
+
+        2019:628 2019:624 2019:620 2019:632 2019:629 2019:631 2019:633  \
+name_id                                                                  
+A000374      Nay       No      Aye      Nay      Nay      Nay      Nay   
+A000370      Yea      Aye       No      Yea      Yea      Yea      Yea   
+A000055      Nay       No      Aye      Nay      Nay      Nay      Nay   
+A000371      Yea      Aye       No      Yea      Yea      Yea      Yea   
+A000372      Nay       No      Aye      Nay      Nay      Nay      Nay   
+
+        2019:630  
+name_id           
+A000374      Nay  
+A000370      Yea  
+A000055      Nay  
+A000371      Yea  
+A000372      Nay  
+
+[5 rows x 642 columns]
+['Yea' 'Nay' nan 'Not Voting' 'No' 'Aye' 'Present']
+
+votes
+
+Result is a table with 443 rows × 500 columns.
+
+Principal component analysis (PCA) is the process of computing the principal components and using them to perform a change of basis on the data.
+There are 500 recorded votes that have legal impact. However, many of these are uncontroversial, and generally agreed upon. So they are essentially noise. To get to the deeper patterns, I want to focus on which attributes most strongly put representatives into clusters, which suggests a PCA for dimensionality reduction. This also has the benefit of making the information easier to visualize, by compressing the information into as few dimensions as possible.
+
+pca = PCA()
+pca_votes = pca.fit_transform(votes)
+#print(pca_votes.shape)
+#print(votes.shape)
+pca_votes = pd.DataFrame(pca_votes[:,:2], index = votes.index)
+
+sns.set_style("darkgrid")
+fig, (ax1, ax2) = plt.subplots(nrows=2, figsize = (15,15))
+sns.lineplot(data = np.cumsum(pca.explained_variance_ratio_), ax=ax1)
+sns.scatterplot(x=pca_votes[0], y=pca_votes[1], ax=ax2)#, hue = members.loc[pca_votes.index, "current_party"])
+
+ax1.set_title("cumulative explained variance")
+ax2.set_title("politician location on first two principal components")
+fig.show()
+

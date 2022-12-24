@@ -1,0 +1,31 @@
+import numpy as np
+from transformers import pipeline
+from sklearn.metrics.pairwise import cosine_similarity
+
+
+def normalized_mean_pooling(token_vectors):
+    sentences_vectors = [np.mean(tokens, axis=0) for tokens in token_vectors]
+    normalized_embeddings = [vector / np.linalg.norm(vector) \ 
+                    for vector in sentences_vectors]
+    return normalized_embeddings
+
+def encoder(texts, modelname):
+    '''
+    Use huggingface pipeline class to get vector embeddings for each token, 
+    then take the mean across tokens to get one vector embbedding per text
+    '''
+    pipe = pipeline("feature-extraction",
+                   model=modelname,
+                   tokenizer=modelname)
+    
+    embeddings = []
+    loader = DataLoader(texts, batch_size=32, shuffle=False)
+    for inputs in tqdm(loader):
+        vectors = pipe(inputs)
+        vectors = [np.vstack(item) for item in vectors]
+        embs = normalized_mean_pooling(vectors)
+        embeddings.extend(embs)
+    return embeddings
+
+vectors_bert = encoder([t1, t2, t3, t4, t5], "bert-base-uncased")
+similarities_bert = cosine_similarity(vectors_bert, vectors_bert)

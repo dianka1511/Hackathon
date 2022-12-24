@@ -1,0 +1,268 @@
+This is PART 1 OF THE Political Voting Clusters.
+
+Similarity between Voting Representatives.
+
+# This Python 3 environment comes with many helpful analytics libraries installed
+# For example, here's several helpful packages to load
+
+import numpy as np # linear algebra
+import pandas as pd # data processing, CSV file I/O (e.g. pd.read_csv)
+import sklearn.cluster as cls
+from sklearn.decomposition import PCA
+import seaborn as sns
+import matplotlib.pyplot as plt
+
+# Input data files are available in the read-only "../input/" directory
+# For example, running this (by clicking run or pressing Shift+Enter) will list all files under the input directory
+
+import os
+for dirname, _, filenames in os.walk('/kaggle/input'):
+    for filename in filenames:
+        print(os.path.join(dirname, filename))
+
+# You can write up to 5GB to the current directory (/kaggle/working/) that gets preserved as output when you create a version using "Save & Run All" 
+# You can also write temporary files to /kaggle/temp/, but they won't be saved outside of the current session
+
+Result: 
+/kaggle/input/house-of-representatives-congress-116/house_members_116.csv
+/kaggle/input/house-of-representatives-congress-116/house_rollcall_info_116.csv
+/kaggle/input/house-of-representatives-congress-116/house_legislation_116.csv
+/kaggle/input/house-of-representatives-congress-116/house_rollcall_votes_116.csv
+
+members = pd.read_csv("../input/house-of-representatives-congress-116/house_members_116.csv", index_col="name_id")
+attendance = pd.read_csv("../input/house-of-representatives-congress-116/house_rollcall_info_116.csv")
+votes = pd.read_csv("../input/house-of-representatives-congress-116/house_rollcall_votes_116.csv", index_col="name_id")
+
+def summarize(df):
+    print("Columns:")
+    print(df.columns)
+    print("\n\n\n\n\nFirst 5 entries:")
+    print(df.head())
+    print("\n\n\n\n\nDescriptive Stats:")
+    print(df.describe())
+    print("\n\n\n\n\nMissing Info:")
+    print(df.info())
+ 
+ summarize(members)
+ 
+ Result:
+ Columns:
+Index(['name', 'state', 'url', 'chamber', 'current_party',
+       'committee_assignments'],
+      dtype='object')
+
+First 5 entries:
+                    name           state  \
+name_id                                    
+A000374    ralph-abraham       Louisiana   
+A000370       alma-adams  North Carolina   
+A000055  robert-aderholt         Alabama   
+A000371     pete-aguilar      California   
+A000372       rick-allen         Georgia   
+
+                                                       url chamber  \
+name_id                                                              
+A000374  https://www.congress.gov/member/ralph-abraham/...   House   
+A000370  https://www.congress.gov/member/alma-adams/A00...   House   
+A000055  https://www.congress.gov/member/robert-aderhol...   House   
+A000371  https://www.congress.gov/member/pete-aguilar/A...   House   
+A000372  https://www.congress.gov/member/rick-allen/A00...   House   
+
+        current_party                              committee_assignments  
+name_id                                                                   
+A000374    Republican                  ['Agriculture', 'Armed Services']  
+A000370    Democratic  ['Agriculture', 'Education and Labor', 'Financ...  
+A000055    Republican                                 ['Appropriations']  
+A000371    Democratic         ['Appropriations', 'House Administration']  
+A000372    Republican             ['Agriculture', 'Education and Labor']  
+
+Descriptive Stats:
+                    name       state  \
+count                443         443   
+unique               443          56   
+top     vicente-gonzalez  California   
+freq                   1          53   
+
+                                                      url chamber  \
+count                                                 443     443   
+unique                                                443       1   
+top     https://www.congress.gov/member/mike-johnson/J...   House   
+freq                                                    1     443   
+
+       current_party committee_assignments  
+count            443                   443  
+unique             3                   220  
+top       Democratic    ['Appropriations']  
+freq             239                    26  
+
+
+Missing Info:
+<class 'pandas.core.frame.DataFrame'>
+Index: 443 entries, A000374 to Z000017
+Data columns (total 6 columns):
+ #   Column                 Non-Null Count  Dtype 
+---  ------                 --------------  ----- 
+ 0   name                   443 non-null    object
+ 1   state                  443 non-null    object
+ 2   url                    443 non-null    object
+ 3   chamber                443 non-null    object
+ 4   current_party          443 non-null    object
+ 5   committee_assignments  443 non-null    object
+dtypes: object(6)
+memory usage: 24.2+ KB
+None
+
+summarize(attendance)
+Result:
+Columns:
+Index(['rollcall_id', 'roll_num', 'date', 'bill_id', 'question', 'result',
+       'description', 'year', 'congress', 'session'],
+      dtype='object')
+
+First 5 entries:
+  rollcall_id  roll_num   date  bill_id  \
+0    2019:001         1  3-Jan   QUORUM   
+1    2019:002         2  3-Jan      NaN   
+2    2019:003         3  3-Jan  H.RES.5   
+3    2019:004         4  3-Jan  H.RES.5   
+4    2019:005         5  3-Jan  H.RES.5   
+
+                                 question result  \
+0                          Call by States      P   
+1                 Election of the Speaker      P   
+2  On Motion to Table the Motion to Refer      P   
+3       On Ordering the Previous Question      P   
+4   On Motion to Commit with Instructions      F   
+
+                                         description  year  congress  session  
+0                                                NaN  2019       116        1  
+1                                                     2019       116        1  
+2  Providing for consideration of H.Res. 6, adopt...  2019       116        1  
+3  Providing for consideration of H.Res. 6, adopt...  2019       116        1  
+4  Providing for consideration of H.Res. 6, adopt...  2019       116        1  
+
+
+
+
+
+Descriptive Stats:
+         roll_num    year  congress  session
+count  642.000000   642.0     642.0    642.0
+mean   321.500000  2019.0     116.0      1.0
+std    185.473718     0.0       0.0      0.0
+min      1.000000  2019.0     116.0      1.0
+25%    161.250000  2019.0     116.0      1.0
+50%    321.500000  2019.0     116.0      1.0
+75%    481.750000  2019.0     116.0      1.0
+max    642.000000  2019.0     116.0      1.0
+
+
+
+
+
+Missing Info:
+<class 'pandas.core.frame.DataFrame'>
+RangeIndex: 642 entries, 0 to 641
+Data columns (total 10 columns):
+ #   Column       Non-Null Count  Dtype 
+---  ------       --------------  ----- 
+ 0   rollcall_id  642 non-null    object
+ 1   roll_num     642 non-null    int64 
+ 2   date         642 non-null    object
+ 3   bill_id      641 non-null    object
+ 4   question     642 non-null    object
+ 5   result       642 non-null    object
+ 6   description  641 non-null    object
+ 7   year         642 non-null    int64 
+ 8   congress     642 non-null    int64 
+ 9   session      642 non-null    int64 
+dtypes: int64(4), object(6)
+memory usage: 50.3+ KB
+None
+
+summarize(votes)
+
+Result:
+Columns:
+Index(['2019:641', '2019:639', '2019:640', '2019:635', '2019:636', '2019:642',
+       '2019:634', '2019:637', '2019:638', '2019:601',
+       ...
+       '2019:627', '2019:625', '2019:628', '2019:624', '2019:620', '2019:632',
+       '2019:629', '2019:631', '2019:633', '2019:630'],
+      dtype='object', length=642)
+
+
+
+
+
+First 5 entries:
+           2019:641    2019:639    2019:640 2019:635 2019:636    2019:642  \
+name_id                                                                     
+A000374          No         Aye          No      Yea      Yea          No   
+A000370         Aye         Aye         Aye      Yea      Yea         Aye   
+A000055          No         Aye          No      Yea      Yea          No   
+A000371  Not Voting  Not Voting  Not Voting      Yea      Yea  Not Voting   
+A000372          No         Aye          No      Yea      Yea          No   
+
+        2019:634    2019:637    2019:638 2019:601  ... 2019:627 2019:625  \
+name_id                                            ...                     
+A000374      Nay         Aye         Aye      Aye  ...      Yea      Nay   
+A000370      Yea          No         Aye       No  ...      Yea      Yea   
+A000055      Nay         Aye         Aye      Aye  ...      Yea      Yea   
+A000371      Yea  Not Voting  Not Voting       No  ...      Yea      Yea   
+A000372      Nay         Aye         Aye      Aye  ...      Nay      Nay   
+
+        2019:628 2019:624 2019:620 2019:632 2019:629 2019:631 2019:633  \
+name_id                                                                  
+A000374      Nay       No      Aye      Nay      Nay      Nay      Nay   
+A000370      Yea      Aye       No      Yea      Yea      Yea      Yea   
+A000055      Nay       No      Aye      Nay      Nay      Nay      Nay   
+A000371      Yea      Aye       No      Yea      Yea      Yea      Yea   
+A000372      Nay       No      Aye      Nay      Nay      Nay      Nay   
+
+        2019:630  
+name_id           
+A000374      Nay  
+A000370      Yea  
+A000055      Nay  
+A000371      Yea  
+A000372      Nay  
+
+[5 rows x 642 columns]
+
+
+
+
+
+Descriptive Stats:
+       2019:641 2019:639 2019:640 2019:635 2019:636 2019:642 2019:634  \
+count       430      436      436      431      431      430      430   
+unique        3        3        3        3        2        3        3   
+top         Aye      Aye      Aye      Yea      Yea      Aye      Yea   
+freq        222      415      242      417      417      251      310   
+
+       2019:637 2019:638 2019:601  ... 2019:627 2019:625 2019:628 2019:624  \
+count       436      436      431  ...      430      430      430      430   
+unique        3        3        3  ...        3        3        3        3   
+top          No      Aye       No  ...      Yea      Yea      Yea      Aye   
+freq        238      414      226  ...      314      290      228      235   
+
+       2019:620 2019:632 2019:629 2019:631 2019:633 2019:630  
+count       436      430      430      430      430      430  
+unique        3        3        3        3        3        3  
+top          No      Yea      Yea      Yea      Yea      Yea  
+freq        214      223      230      231      209      281  
+
+[4 rows x 642 columns]
+
+
+
+
+
+Missing Info:
+<class 'pandas.core.frame.DataFrame'>
+Index: 443 entries, A000374 to M001179
+Columns: 642 entries, 2019:641 to 2019:630
+dtypes: object(642)
+memory usage: 2.2+ MB
+None

@@ -1,25 +1,3 @@
-
-Sign up
-BohdanOrlov
-/
-iOS-Developer-Roadmap
-Public
-Code
-Issues
-6
-Pull requests
-4
-Actions
-Projects
-Wiki
-Security
-Insights
-iOS-Developer-Roadmap/RoadmapProject/Roadmap.xcodeproj/project.pbxproj
-@dgenyk
-dgenyk Updated to Swift 5.0
-…
- 3 contributors
-318 lines (308 sloc)  11.2 KB
 // !$*UTF8*$!
 {
 	archiveVersion = 1;

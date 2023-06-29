@@ -1,27 +1,3 @@
-
-Sign up
-BohdanOrlov
-/
-iOS-Developer-Roadmap
-Public
-Code
-Issues
-6
-Pull requests
-4
-Actions
-Projects
-Wiki
-Security
-Insights
-iOS-Developer-Roadmap/RoadmapProject/Script/Generated/ROADMAP.txt
-@traviscibot
-traviscibot Deploy BohdanOrlov/iOS-Developer-Roadmap to github.com/BohdanOrlov/iO…
-…
- 3 contributors
-471 lines (466 sloc)  54.3 KB
-@startuml
-left to right direction
 (iOS Developer) as (iOS Developer) <<^>> 
 (Practical knowledge) as (iOS Developer->Practical knowledge) <<^>> 
 (Getting started) as (iOS Developer->Practical knowledge->Getting started)
